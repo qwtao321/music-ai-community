@@ -1,0 +1,91 @@
+import type { Profile, Track } from "./types";
+
+const now = Date.now();
+
+export const seedProfiles: Profile[] = [
+  {
+    id: "demo-admin",
+    displayName: "AI66 运营",
+    avatarUrl: "https://api.dicebear.com/9.x/shapes/svg?seed=ai66",
+    role: "admin",
+    credits: 200,
+    createdAt: new Date(now - 86400000 * 30).toISOString(),
+  },
+  {
+    id: "demo-user",
+    displayName: "霓虹作曲家",
+    avatarUrl: "https://api.dicebear.com/9.x/shapes/svg?seed=neon",
+    role: "user",
+    credits: 120,
+    createdAt: new Date(now - 86400000 * 8).toISOString(),
+  },
+];
+
+export const seedTracks: Track[] = [
+  {
+    id: "track-neon-rain",
+    ownerId: "demo-user",
+    ownerName: "霓虹作曲家",
+    title: "霓虹雨夜",
+    prompt: "赛博城市雨夜，女声，电子流行，副歌抓耳",
+    lyrics: "雨滴落在玻璃窗，城市像一段失真的合唱。",
+    tags: ["电子", "流行", "女声"],
+    language: "中文",
+    mode: "original",
+    visibility: "public",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    coverUrl:
+      "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=1200&q=80",
+    durationSeconds: 214,
+    plays: 8120,
+    likes: 624,
+    favorites: 221,
+    remixes: 89,
+    createdAt: new Date(now - 86400000 * 2).toISOString(),
+    updatedAt: new Date(now - 86400000 * 2).toISOString(),
+  },
+  {
+    id: "track-summer-loop",
+    ownerId: "demo-admin",
+    ownerName: "AI66 运营",
+    title: "夏日循环",
+    prompt: "轻快 indie pop，适合短视频，阳光海岸",
+    lyrics: "把夏天装进口袋，海风替我们按下播放。",
+    tags: ["独立", "短视频", "阳光"],
+    language: "中文",
+    mode: "cover_text_style",
+    visibility: "public",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+    coverUrl:
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80",
+    durationSeconds: 188,
+    plays: 4520,
+    likes: 410,
+    favorites: 180,
+    remixes: 64,
+    createdAt: new Date(now - 86400000 * 4).toISOString(),
+    updatedAt: new Date(now - 86400000 * 4).toISOString(),
+  },
+  {
+    id: "track-midnight-cover",
+    ownerId: "demo-user",
+    ownerName: "霓虹作曲家",
+    title: "午夜翻唱实验",
+    prompt: "上传参考音频后生成，男声低音，R&B groove",
+    lyrics: "午夜的灯还亮着，旋律把沉默重新命名。",
+    tags: ["翻唱", "R&B", "男声"],
+    language: "中文",
+    mode: "cover_audio",
+    visibility: "public",
+    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+    coverUrl:
+      "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=1200&q=80",
+    durationSeconds: 243,
+    plays: 6380,
+    likes: 351,
+    favorites: 270,
+    remixes: 118,
+    createdAt: new Date(now - 86400000).toISOString(),
+    updatedAt: new Date(now - 86400000).toISOString(),
+  },
+];

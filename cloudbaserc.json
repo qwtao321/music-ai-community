@@ -1,0 +1,36 @@
+{
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "version": "2.0",
+  "envId": "oscar-d1gv01qxw0d7f0ec4",
+  "region": "ap-shanghai",
+  "app": {
+    "serviceName": "ai-music-community",
+    "framework": "next",
+    "installCommand": "npm install",
+    "buildCommand": "npm run build",
+    "outputDir": ".next",
+    "deployPath": "/",
+    "envVariables": {
+      "CLOUDBASE_ENV_ID": "oscar-d1gv01qxw0d7f0ec4",
+      "CLOUDBASE_REGION": "ap-shanghai",
+      "NEXT_PUBLIC_CLOUDBASE_ENV_ID": "oscar-d1gv01qxw0d7f0ec4",
+      "NEXT_PUBLIC_CLOUDBASE_REGION": "ap-shanghai",
+      "CLOUDBASE_FORCE_DEMO": "false",
+      "SUNO_API_BASE_URL": "https://www.suno-api.io",
+      "SUNO_MODEL": "suno-v5-5",
+      "SUNO_FORCE_MOCK": "false",
+      "MINIMAX_API_BASE_URL": "https://api.minimax.io",
+      "MINIMAX_MODEL": "MiniMax-M3"
+    },
+    "ignore": [
+      ".env",
+      ".env.*",
+      ".next",
+      ".next/**/*",
+      "node_modules",
+      "node_modules/**/*",
+      "coverage",
+      "coverage/**/*"
+    ]
+  }
+}
