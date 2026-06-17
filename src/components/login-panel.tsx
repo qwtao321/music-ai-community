@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, MessageCircleMore, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getErrorMessage } from "@/lib/errors";
 
 export function LoginPanel({ from = "/music" }: { from?: string }) {
   const router = useRouter();
@@ -50,7 +51,7 @@ export function LoginPanel({ from = "/music" }: { from?: string }) {
       setCountdown(60);
       setMessage("验证码已发送，请留意手机短信。");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "验证码发送失败");
+      setMessage(getErrorMessage(error, "验证码发送失败"));
     } finally {
       setIsSending(false);
     }
@@ -77,7 +78,7 @@ export function LoginPanel({ from = "/music" }: { from?: string }) {
       router.replace(from);
       router.refresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "登录失败");
+      setMessage(getErrorMessage(error, "登录失败"));
     } finally {
       setIsSubmitting(false);
     }
