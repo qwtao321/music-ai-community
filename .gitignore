@@ -17,6 +17,10 @@
 /.next/
 /out/
 
+# open-next / sites build artifacts
+/.open-next/
+/dist/
+
 # production
 /build
 
