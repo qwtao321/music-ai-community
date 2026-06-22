@@ -2,7 +2,6 @@ import Link from "next/link";
 import { Disc3, Music2, Trophy, UserRound, Wrench } from "lucide-react";
 import { getMusicStore } from "@/lib/music/server-store";
 import { getRequestUserId } from "@/lib/music/user";
-import { SignOutButton } from "./sign-out-button";
 
 const publicNavItems = [
   { href: "/music", label: "创作", icon: Music2 },
@@ -11,12 +10,12 @@ const publicNavItems = [
 ];
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  const userId = await getRequestUserId();
+  const userId = (await getRequestUserId()) ?? "anonymous-user";
   const store = await getMusicStore();
-  const profile = userId ? await store.ensureProfile(userId) : null;
+  const profile = await store.ensureProfile(userId);
   const navItems = [
     ...publicNavItems,
-    ...(profile ? [{ href: "/me", label: "我的", icon: UserRound }] : []),
+    { href: "/me", label: "我的", icon: UserRound },
     ...(profile?.role === "admin"
       ? [{ href: "/admin", label: "管理", icon: Wrench }]
       : []),
@@ -48,25 +47,11 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
-          <div className="flex items-center gap-2">
-            {profile ? (
-              <>
-                <div className="hidden text-right sm:block">
-                  <p className="text-sm font-medium">{profile.displayName}</p>
-                  <p className="text-xs text-black/50">
-                    {profile.role === "admin" ? "管理员" : "微信已登录"}
-                  </p>
-                </div>
-                <SignOutButton />
-              </>
-            ) : (
-              <Link
-                href="/login"
-                className="rounded bg-[#191713] px-3 py-2 text-sm font-semibold text-white"
-              >
-                微信登录
-              </Link>
-            )}
+          <div className="hidden text-right sm:block">
+            <p className="text-sm font-medium">{profile.displayName}</p>
+            <p className="text-xs text-black/50">
+              {profile.role === "admin" ? "管理员" : "匿名体验中"}
+            </p>
           </div>
         </div>
       </header>

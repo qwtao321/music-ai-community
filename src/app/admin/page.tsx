@@ -17,7 +17,7 @@ export default async function AdminPage() {
   const userId = await getRequestUserId();
 
   if (!userId) {
-    redirect("/login?from=/admin");
+    redirect("/music");
   }
 
   const profile = await store.ensureProfile(userId);

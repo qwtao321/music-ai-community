@@ -13,12 +13,7 @@ export class PermissionError extends Error {
 }
 
 export async function requireUserProfile(store: MusicStore, request: Request) {
-  const userId = getUserIdFromRequest(request);
-
-  if (!userId) {
-    throw new PermissionError("Login required", 401);
-  }
-
+  const userId = getUserIdFromRequest(request) ?? "anonymous-user";
   return store.ensureProfile(userId);
 }
 

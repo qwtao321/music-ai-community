@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { ArrowRight, Coins, Headphones, Radio } from "lucide-react";
 import { GenerationForm } from "@/components/generation-form";
 import { MetricPill } from "@/components/metric-pill";
@@ -17,11 +16,7 @@ type PageProps = {
 
 export default async function MusicPage({ searchParams }: PageProps) {
   const store = await getMusicStore();
-  const userId = await getRequestUserId();
-
-  if (!userId) {
-    redirect("/login?from=/music");
-  }
+  const userId = (await getRequestUserId()) ?? "anonymous-user";
 
   const params = await searchParams;
   const profile = await store.ensureProfile(userId);

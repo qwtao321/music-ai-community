@@ -32,13 +32,13 @@ describe("music auth", () => {
     });
   });
 
-  it("rejects unauthenticated requests for protected resources", async () => {
+  it("falls back to the anonymous profile for unauthenticated requests", async () => {
     const store = createDemoMusicStore();
     const request = new Request("https://example.test");
 
-    await expect(requireUserProfile(store, request)).rejects.toMatchObject({
-      status: 401,
-      message: "Login required",
+    await expect(requireUserProfile(store, request)).resolves.toMatchObject({
+      id: "anonymous-user",
+      displayName: "体验用户",
     });
   });
 

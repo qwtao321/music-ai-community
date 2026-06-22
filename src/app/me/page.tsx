@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Coins, FileClock, Heart, Music2 } from "lucide-react";
 import { MetricPill } from "@/components/metric-pill";
 import { TrackCard } from "@/components/track-card";
@@ -17,11 +16,7 @@ const reasonLabels = {
 
 export default async function MePage() {
   const store = await getMusicStore();
-  const userId = await getRequestUserId();
-
-  if (!userId) {
-    redirect("/login?from=/me");
-  }
+  const userId = (await getRequestUserId()) ?? "anonymous-user";
 
   const library = await store.getMyLibrary(userId);
 
