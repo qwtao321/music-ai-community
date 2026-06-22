@@ -13,7 +13,14 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { GenerationMode, GenerationJob, Track } from "@/lib/music/types";
+import { StyleTemplateLibrary } from "@/components/style-template-library";
+import type {
+  GenerationMode,
+  GenerationJob,
+  MusicStyleTemplate,
+  Track,
+} from "@/lib/music/types";
+import { appendStyleTemplatePrompt } from "@/lib/music/style-templates";
 import { PublishTrackButton } from "./publish-track-button";
 
 type GenerateResponse = {
@@ -49,11 +56,14 @@ const styleTags = ["流行", "电子", "R&B", "民谣", "摇滚", "国风", "短
 
 export function GenerationForm({
   initialPrompt = "",
+  styleTemplates = [],
 }: {
   initialPrompt?: string;
+  styleTemplates?: MusicStyleTemplate[];
 }) {
   const [mode, setMode] = useState<GenerationMode>("original");
   const [prompt, setPrompt] = useState(initialPrompt);
+  const [songTitle, setSongTitle] = useState("");
   const [lyrics, setLyrics] = useState("");
   const [language, setLanguage] = useState("中文");
   const [tags, setTags] = useState<string[]>(["流行", "电子"]);
@@ -61,6 +71,7 @@ export function GenerationForm({
   const [isAdvanced, setIsAdvanced] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isWritingLyrics, setIsWritingLyrics] = useState(false);
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const [message, setMessage] = useState("");
   const [tracks, setTracks] = useState<Track[]>([]);
   const [job, setJob] = useState<GenerationJob | null>(null);
@@ -81,6 +92,45 @@ export function GenerationForm({
     );
   }
 
+  function appendTemplate(template: MusicStyleTemplate) {
+    setPrompt((current) => appendStyleTemplatePrompt(current, template.prompt));
+    setMessage(`已追加模板：${template.styleLabel}`);
+  }
+
+  async function generateTitle() {
+    setIsGeneratingTitle(true);
+    setMessage("");
+
+    const response = await fetch("/api/song-title", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        prompt,
+        language,
+        tags,
+      }),
+    });
+    const payload = await readJsonResponse<{ songTitle?: string }>(response);
+
+    if (response.status === 401) {
+      const from = `${window.location.pathname}${window.location.search}`;
+      window.location.assign(`/login?from=${encodeURIComponent(from)}`);
+      return;
+    }
+
+    if (!response.ok || !payload.songTitle) {
+      setMessage(payload.error ?? "AI 生成歌名失败");
+      setIsGeneratingTitle(false);
+      return;
+    }
+
+    setSongTitle(payload.songTitle);
+    setMessage(`已生成歌名：${payload.songTitle}`);
+    setIsGeneratingTitle(false);
+  }
+
   async function writeLyrics() {
     setIsWritingLyrics(true);
     setMessage("");
@@ -94,6 +144,7 @@ export function GenerationForm({
         theme: prompt || "一首尚未命名的歌",
         language,
         tags,
+        songTitle: songTitle || undefined,
       }),
     });
     const payload = await readJsonResponse<{ lyrics?: string }>(response);
@@ -124,6 +175,7 @@ export function GenerationForm({
       body: JSON.stringify({
         mode,
         prompt,
+        songTitle: songTitle.trim() || undefined,
         lyrics,
         tags,
         language,
@@ -300,6 +352,32 @@ export function GenerationForm({
         />
       </label>
 
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-semibold">歌名</span>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={generateTitle}
+            disabled={isGeneratingTitle}
+          >
+            {isGeneratingTitle ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Sparkles className="size-4" />
+            )}
+            <span>AI 生成歌名</span>
+          </Button>
+        </div>
+        <input
+          value={songTitle}
+          onChange={(event) => setSongTitle(event.target.value)}
+          className="w-full rounded border border-black/15 bg-[#fffdf8] px-3 py-2 text-sm outline-none transition focus:border-[#191713]"
+          placeholder="可直接输入歌名，也可交给 AI 生成"
+        />
+      </div>
+
       {mode === "cover_audio" && (
         <div className="grid gap-3 rounded border border-dashed border-black/20 bg-[#eef2f1] p-3 sm:grid-cols-[1fr_auto]">
           <label className="flex cursor-pointer items-center gap-3 rounded bg-white px-3 py-2 text-sm font-medium">
@@ -367,6 +445,11 @@ export function GenerationForm({
           </button>
         ))}
       </div>
+
+      <StyleTemplateLibrary
+        templates={styleTemplates}
+        onAppendTemplate={appendTemplate}
+      />
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/10 pt-3">
         <div className="flex items-center gap-2">

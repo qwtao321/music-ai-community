@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildLyricsPrompt, generateLyricsWithMiniMax } from "./lyrics";
+import { buildLyricsPrompt, generateLyricsWithDeepSeek } from "./lyrics";
 
 describe("lyrics generation", () => {
   it("uses Cantonese rhyme guidance when the language is Cantonese", () => {
@@ -28,9 +28,21 @@ describe("lyrics generation", () => {
     expect(prompt).toContain("平仄");
   });
 
-  it("calls MiniMax chat completions and extracts lyrics text", async () => {
+  it("includes the attached lyric prompt constraints from the project file", () => {
+    const prompt = buildLyricsPrompt({
+      theme: "海边晚风",
+      language: "中文",
+      tags: ["流行"],
+    });
+
+    expect(prompt).toContain("必须创作原创歌词");
+    expect(prompt).toContain("不得：");
+    expect(prompt).toContain("模仿特定在世歌手");
+  });
+
+  it("calls DeepSeek chat completions and extracts lyrics text", async () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
-    const lyrics = await generateLyricsWithMiniMax(
+    const lyrics = await generateLyricsWithDeepSeek(
       {
         theme: "凌晨城市",
         language: "中文",
@@ -53,13 +65,13 @@ describe("lyrics generation", () => {
       },
     );
 
-    expect(calls[0].url).toBe("https://api.minimax.io/v1/chat/completions");
+    expect(calls[0].url).toBe("https://api.deepseek.com/chat/completions");
     expect(calls[0].init?.headers).toMatchObject({
       Authorization: "Bearer secret",
       "Content-Type": "application/json",
     });
     expect(JSON.parse(String(calls[0].init?.body))).toMatchObject({
-      model: "MiniMax-M3",
+      model: "deepseek-v4-flash",
     });
     expect(lyrics).toContain("[Verse 1]");
     expect(lyrics).toContain("[Chorus]");

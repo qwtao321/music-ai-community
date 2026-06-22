@@ -2,12 +2,14 @@ import { applyCreditChange, calculateGenerationCost } from "./credits";
 import { MockProvider, type MusicProvider } from "./provider";
 import { rankTracks } from "./rankings";
 import { isAdminUserId } from "./roles";
+import { createMusicStyleTemplates } from "./style-templates";
 import { seedProfiles, seedTracks } from "./seed";
 import type { HallQuery, MusicStore } from "./music-store";
 import type {
   CreditLedgerEntry,
   GenerationJob,
   GenerationRequest,
+  MusicStyleTemplate,
   Profile,
   ProviderAsset,
   PublicTrack,
@@ -48,11 +50,13 @@ export class DemoMusicStore implements MusicStore {
   private readonly favorites = new Set<string>();
   private readonly plays: Array<{ trackId: string; profileId?: string }> = [];
   private readonly ledger: CreditLedgerEntry[] = [];
+  private readonly styleTemplates: MusicStyleTemplate[];
 
   constructor(provider: MusicProvider = new MockProvider()) {
     this.provider = provider;
     seedProfiles.forEach((profile) => this.profiles.set(profile.id, profile));
     seedTracks.forEach((track) => this.tracks.set(track.id, track));
+    this.styleTemplates = createMusicStyleTemplates();
   }
 
   ensureProfile(
@@ -151,6 +155,7 @@ export class DemoMusicStore implements MusicStore {
     const providerResult = await this.createProviderJobSafely({
       mode,
       prompt: request.prompt,
+      songTitle: request.songTitle,
       lyrics: request.lyrics,
       tags: request.tags ?? [],
       language: request.language ?? "中文",
@@ -161,6 +166,7 @@ export class DemoMusicStore implements MusicStore {
       ownerId,
       mode,
       prompt: request.prompt,
+      songTitle: request.songTitle,
       lyrics: request.lyrics,
       tags: request.tags ?? [],
       language: request.language ?? "中文",
@@ -307,6 +313,10 @@ export class DemoMusicStore implements MusicStore {
     );
   }
 
+  listStyleTemplates() {
+    return [...this.styleTemplates];
+  }
+
   recordPlay(trackId: string, profileId?: string) {
     const track = this.getTrack(trackId);
 
@@ -446,6 +456,7 @@ export class DemoMusicStore implements MusicStore {
         title:
           item.title ??
           result.title ??
+          job.songTitle ??
           `AI ${job.prompt.slice(0, 16)}${results.length > 1 ? ` ${index + 1}` : ""}`,
         prompt: job.prompt,
         lyrics: item.lyrics ?? result.lyrics ?? job.lyrics ?? "",

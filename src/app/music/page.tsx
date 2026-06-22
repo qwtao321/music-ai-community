@@ -32,6 +32,7 @@ export default async function MusicPage({ searchParams }: PageProps) {
       ? remixTrack
       : null;
   const hall = await store.getHall({ sort: "hot", viewerId: profile.id });
+  const styleTemplates = await store.listStyleTemplates();
   const initialPrompt = visibleRemixTrack
     ? `${visibleRemixTrack.prompt}，参考《${visibleRemixTrack.title}》做同款但旋律重新生成`
     : "";
@@ -59,7 +60,10 @@ export default async function MusicPage({ searchParams }: PageProps) {
             </div>
           </div>
         </div>
-        <GenerationForm initialPrompt={initialPrompt} />
+        <GenerationForm
+          initialPrompt={initialPrompt}
+          styleTemplates={styleTemplates}
+        />
       </section>
 
       <aside className="space-y-4">

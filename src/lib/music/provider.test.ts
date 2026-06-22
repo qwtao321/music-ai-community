@@ -94,6 +94,7 @@ describe("music provider adapters", () => {
     await provider.createJob({
       mode: "cover_text_style",
       prompt: "海边的晚风",
+      songTitle: "海边的晚风",
       tags: ["Mandopop", "acoustic"],
       lyrics: "[Verse]\n晚风经过窗",
     });
@@ -106,6 +107,78 @@ describe("music provider adapters", () => {
       song_title: "海边的晚风",
       instrumental: false,
       wait_completion: false,
+    });
+  });
+
+  it("extracts the real task id from nested Suno create responses", async () => {
+    const provider = new SunoLikeProvider({
+      apiBaseUrl: "https://example.test",
+      apiKey: "secret",
+      fetcher: async () =>
+        Response.json({
+          code: 200,
+          msg: "success",
+          data: {
+            taskId: "task-123",
+            status: "pending",
+          },
+        }),
+    });
+
+    const job = await provider.createJob({
+      mode: "original",
+      prompt: "港风夜雨",
+      tags: ["Cantopop"],
+    });
+
+    expect(job.providerJobId).toBe("task-123");
+    expect(job.status).toBe("queued");
+  });
+
+  it("fails fast instead of querying Suno with an empty provider job id", async () => {
+    let called = false;
+    const provider = new SunoLikeProvider({
+      apiBaseUrl: "https://example.test",
+      apiKey: "secret",
+      fetcher: async () => {
+        called = true;
+        return Response.json([]);
+      },
+    });
+
+    const job = await provider.getJob("");
+
+    expect(called).toBe(false);
+    expect(job.status).toBe("failed");
+    expect(job.error).toContain("provider job id");
+  });
+
+  it("prefers the requested song title when creating a custom Suno job", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    const provider = new SunoLikeProvider({
+      apiBaseUrl: "https://example.test",
+      apiKey: "secret",
+      fetcher: async (url, init) => {
+        calls.push({ url: String(url), init });
+        return Response.json([
+          {
+            song_id: "song-1",
+            status: "pending",
+          },
+        ]);
+      },
+    });
+
+    await provider.createJob({
+      mode: "cover_text_style",
+      prompt: "深夜港风情歌",
+      songTitle: "霓虹未眠",
+      tags: ["R&B", "男声"],
+      lyrics: "[Verse]\n海风吹过窗",
+    });
+
+    expect(JSON.parse(String(calls[0].init?.body))).toMatchObject({
+      song_title: "霓虹未眠",
     });
   });
 

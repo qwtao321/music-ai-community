@@ -3,6 +3,7 @@ import type {
   GenerationJob,
   GenerationRequest,
   HallSort,
+  MusicStyleTemplate,
   Profile,
   PublicTrack,
   RankingKind,
@@ -64,6 +65,7 @@ export interface MusicStore {
   getTrack(trackId: string): MaybePromise<Track | undefined>;
   getHall(query?: HallQuery): MaybePromise<HallResult>;
   getRankings(kind: RankingKind, viewerId?: string): MaybePromise<PublicTrack[]>;
+  listStyleTemplates(): MaybePromise<MusicStyleTemplate[]>;
   recordPlay(trackId: string, profileId?: string): MaybePromise<Track>;
   toggleLike(
     trackId: string,

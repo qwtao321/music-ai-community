@@ -139,6 +139,27 @@ describe("demo music store", () => {
     ]);
   });
 
+  it("passes the requested song title through to the generated draft track", async () => {
+    const provider = new TwoSongProvider();
+    const store = createDemoMusicStore(provider);
+    const profile = store.ensureProfile("user-3", "标题创作者");
+
+    const job = await store.createGenerationJob(profile.id, {
+      mode: "original",
+      prompt: "深夜港风情歌",
+      songTitle: "霓虹未眠",
+      tags: ["R&B"],
+      visibility: "draft",
+    });
+
+    const completed = await store.refreshJob(job.id);
+    const draft = store.getTrack(completed.resultTrackId ?? "");
+
+    expect(provider.createCalls).toBe(1);
+    expect(completed.songTitle).toBe("霓虹未眠");
+    expect(draft?.title).toBe("版本 A");
+  });
+
   it("records likes and favorites once per user", () => {
     const store = createDemoMusicStore();
     const track = store.getHall({ sort: "latest" }).items[0];
@@ -194,5 +215,14 @@ describe("demo music store", () => {
       "generation_charge",
       "generation_refund",
     ]);
+  });
+
+  it("exposes the seeded style template library to the UI layer", async () => {
+    const store = createDemoMusicStore();
+    const templates = await store.listStyleTemplates();
+
+    expect(templates).toHaveLength(30);
+    expect(templates[0].categoryName).toBe("泛 Pop 流行");
+    expect(templates[0].prompt).toContain("歌曲定位：");
   });
 });

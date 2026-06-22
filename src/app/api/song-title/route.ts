@@ -1,12 +1,11 @@
-import { z, ZodError } from "zod";
+import { ZodError, z } from "zod";
 import { fail, ok, parseJson } from "@/lib/api";
-import { generateLyricsWithDeepSeek } from "@/lib/music/lyrics";
+import { generateSongTitleWithDeepSeek } from "@/lib/music/song-title";
 
 const schema = z.object({
-  theme: z.string().trim().min(1).max(5000),
+  prompt: z.string().trim().min(1).max(5000),
   language: z.string().trim().min(1).default("中文"),
   tags: z.array(z.string()).default([]),
-  songTitle: z.string().trim().min(1).max(120).optional(),
 });
 
 export async function POST(request: Request) {
@@ -18,18 +17,18 @@ export async function POST(request: Request) {
     }
 
     const payload = await parseJson(request, schema);
-    const lyrics = await generateLyricsWithDeepSeek(payload, {
+    const songTitle = await generateSongTitleWithDeepSeek(payload, {
       apiKey,
       model: process.env.DEEPSEEK_MODEL,
       apiBaseUrl: process.env.DEEPSEEK_API_BASE_URL,
     });
 
-    return ok({ lyrics });
+    return ok({ songTitle });
   } catch (error) {
     if (error instanceof ZodError) {
-      return fail(error.issues[0]?.message ?? "Invalid lyrics payload", 422);
+      return fail(error.issues[0]?.message ?? "Invalid song title payload", 422);
     }
 
-    return fail(error instanceof Error ? error.message : "Lyrics generation failed");
+    return fail(error instanceof Error ? error.message : "Song title generation failed");
   }
 }

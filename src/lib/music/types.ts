@@ -41,6 +41,35 @@ export type ProviderAsset = {
   createdAt: string;
 };
 
+export type MusicStyleTemplate = {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  categoryOrder: number;
+  styleName: string;
+  styleLabel: string;
+  summary: string;
+  positioning: string;
+  genre: string;
+  mood: string;
+  bpm: string;
+  harmony: string;
+  vocals: string;
+  instruments: string;
+  mix: string;
+  banned: string;
+  prompt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type MusicStyleTemplateGroup = {
+  categoryId: string;
+  categoryName: string;
+  categoryOrder: number;
+  templates: MusicStyleTemplate[];
+};
+
 export type Track = {
   id: string;
   ownerId: string;
@@ -69,6 +98,7 @@ export type GenerationJob = {
   ownerId: string;
   mode: GenerationMode;
   prompt: string;
+  songTitle?: string;
   lyrics?: string;
   tags: string[];
   language: string;
@@ -87,6 +117,7 @@ export type GenerationJob = {
 export type GenerationRequest = {
   mode: GenerationMode;
   prompt: string;
+  songTitle?: string;
   lyrics?: string;
   tags?: string[];
   language?: string;
@@ -97,6 +128,7 @@ export type GenerationRequest = {
 export type ProviderCreateRequest = {
   mode: GenerationMode;
   prompt: string;
+  songTitle?: string;
   lyrics?: string;
   tags: string[];
   language?: string;

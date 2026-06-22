@@ -96,6 +96,53 @@ function stringifyProviderMessage(value: unknown, fallback: string) {
   }
 }
 
+function getNestedRecord(value: unknown, key: string) {
+  const record =
+    value && typeof value === "object" ? (value as Record<string, unknown>) : undefined;
+  const nested = record?.[key];
+  return nested && typeof nested === "object"
+    ? (nested as Record<string, unknown>)
+    : undefined;
+}
+
+function extractProviderJobId(payload: Record<string, unknown>) {
+  const data = getNestedRecord(payload, "data");
+  const identifier =
+    payload.song_id ??
+    payload.id ??
+    payload.taskId ??
+    payload.job_id ??
+    data?.song_id ??
+    data?.id ??
+    data?.taskId ??
+    data?.job_id;
+
+  return identifier ? String(identifier) : "";
+}
+
+function extractStatus(payload: Record<string, unknown>) {
+  const data = getNestedRecord(payload, "data");
+  return String(payload.status ?? payload.state ?? data?.status ?? data?.state ?? "queued");
+}
+
+function extractMediaField(payload: Record<string, unknown>, fieldNames: string[]) {
+  const data = getNestedRecord(payload, "data");
+
+  for (const fieldName of fieldNames) {
+    const direct = payload[fieldName];
+    if (direct) {
+      return direct;
+    }
+
+    const nested = data?.[fieldName];
+    if (nested) {
+      return nested;
+    }
+  }
+
+  return undefined;
+}
+
 export class SunoLikeProvider implements MusicProvider {
   readonly name = "suno-like";
 
@@ -125,6 +172,14 @@ export class SunoLikeProvider implements MusicProvider {
   }
 
   async getJob(providerJobId: string): Promise<ProviderJobResult> {
+    if (!providerJobId.trim()) {
+      return {
+        providerJobId: "",
+        status: "failed",
+        error: "Missing provider job id from Suno create response",
+      };
+    }
+
     const response = await this.fetcher(
       `${this.apiBaseUrl}/api/music/query`,
       {
@@ -150,27 +205,20 @@ export class SunoLikeProvider implements MusicProvider {
     }
 
     const payload = raw as Record<string, unknown>;
-    const id = String(
-      payload.song_id ??
-        payload.id ??
-        payload.taskId ??
-        payload.taskId ??
-        payload.job_id ??
-        "",
-    );
-    const status = normalizeProviderStatus(
-      String(payload.status ?? payload.state ?? "queued"),
-    );
-    const audioUrl =
-      payload.audio_url ??
-      payload.audioUrl ??
-      payload.audio_url ??
-      payload.audioUrl ??
-      payload.url;
-    const coverUrl =
-      payload.cover_url ??
-      payload.coverUrl ??
-      payload.image_url;
+    const data = getNestedRecord(payload, "data");
+    const id = extractProviderJobId(payload);
+    const status = normalizeProviderStatus(extractStatus(payload));
+    const audioUrl = extractMediaField(payload, [
+      "audio_url",
+      "audioUrl",
+      "url",
+    ]);
+    const coverUrl = extractMediaField(payload, [
+      "cover_url",
+      "coverUrl",
+      "image_url",
+      "imageUrl",
+    ]);
     const duration = payload.duration;
     const finalStatus = audioUrl && status === "running" ? "succeeded" : status;
 
@@ -181,14 +229,24 @@ export class SunoLikeProvider implements MusicProvider {
         ? String(payload.song_title)
         : payload.title
           ? String(payload.title)
+          : data?.song_title
+            ? String(data.song_title)
+            : data?.title
+              ? String(data.title)
           : undefined,
       audioUrl: audioUrl ? String(audioUrl) : undefined,
       coverUrl: coverUrl ? String(coverUrl) : undefined,
       lyrics: payload.lyrics
         ? String(payload.lyrics)
+        : data?.lyrics
+          ? String(data.lyrics)
         : undefined,
       durationSeconds:
-        typeof duration === "number" ? Math.round(duration) : undefined,
+        typeof duration === "number"
+          ? Math.round(duration)
+          : typeof data?.duration === "number"
+            ? Math.round(data.duration)
+            : undefined,
       error:
         payload.error || finalStatus === "failed"
           ? stringifyProviderMessage(
@@ -202,13 +260,14 @@ export class SunoLikeProvider implements MusicProvider {
 
   private buildGeneratePayload(request: ProviderCreateRequest) {
     const tags = request.tags.join(", ");
+    const title = request.songTitle?.trim() || request.prompt.slice(0, 80);
 
     if (request.lyrics?.trim()) {
       return {
         model: this.model,
         lyrics: request.lyrics,
         style_tags: tags || request.prompt,
-        song_title: request.prompt.slice(0, 80),
+        song_title: title,
         instrumental: false,
         wait_completion: false,
       };
@@ -285,9 +344,7 @@ export class SunoLikeProvider implements MusicProvider {
 
     if (!ok || (Number.isFinite(code) && code >= 400)) {
       return {
-        providerJobId: String(
-          (payload.data as Record<string, unknown> | undefined)?.taskId ?? "",
-        ),
+        providerJobId: extractProviderJobId(payload),
         status: "failed",
         error: stringifyProviderMessage(
           payload.msg ?? payload.error,
@@ -310,11 +367,11 @@ export class MockProvider implements MusicProvider {
     const providerJobId = `mock-${Date.now()}-${Math.random()
       .toString(16)
       .slice(2)}`;
-    const title = request.prompt.slice(0, 18) || "未命名旋律";
+    const title = request.songTitle?.trim() || request.prompt.slice(0, 18) || "未命名旋律";
     const result: ProviderJobResult = {
       providerJobId,
       status: "succeeded",
-      title: `AI ${title}`,
+      title: request.songTitle?.trim() ? title : `AI ${title}`,
       audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
       coverUrl:
         "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1200&q=80",

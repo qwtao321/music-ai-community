@@ -6,10 +6,15 @@ import type { HallQuery, MusicStore } from "./music-store";
 import { type MusicProvider } from "./provider";
 import { rankTracks } from "./rankings";
 import { isAdminUserId } from "./roles";
+import {
+  createMusicStyleTemplates,
+  groupStyleTemplatesByCategory,
+} from "./style-templates";
 import type {
   CreditLedgerEntry,
   GenerationJob,
   GenerationRequest,
+  MusicStyleTemplate,
   Profile,
   ProviderAsset,
   PublicTrack,
@@ -165,6 +170,7 @@ export class CloudBaseMusicStore implements MusicStore {
     const providerResult = await this.createProviderJobSafely({
       mode,
       prompt: request.prompt,
+      songTitle: request.songTitle,
       lyrics: request.lyrics,
       tags: request.tags ?? [],
       language: request.language ?? "中文",
@@ -175,6 +181,7 @@ export class CloudBaseMusicStore implements MusicStore {
       ownerId,
       mode,
       prompt: request.prompt,
+      songTitle: request.songTitle,
       lyrics: request.lyrics,
       tags: request.tags ?? [],
       language: request.language ?? "中文",
@@ -329,6 +336,25 @@ export class CloudBaseMusicStore implements MusicStore {
     return tracks.map((track) =>
       withViewerState(track, viewerId, likeKeys, favoriteKeys),
     );
+  }
+
+  async listStyleTemplates() {
+    const templates = await this.getAll<MusicStyleTemplate>(
+      cloudBaseCollections.musicStyleTemplates,
+    );
+
+    if (templates.length) {
+      return groupStyleTemplatesByCategory(templates)
+        .flatMap((group) => group.templates)
+        .sort((left, right) => left.id.localeCompare(right.id));
+    }
+
+    const seeded = createMusicStyleTemplates();
+    for (const template of seeded) {
+      await this.save(cloudBaseCollections.musicStyleTemplates, template);
+    }
+
+    return seeded;
   }
 
   async recordPlay(trackId: string, profileId?: string) {
@@ -582,6 +608,7 @@ export class CloudBaseMusicStore implements MusicStore {
         title:
           item.title ??
           result.title ??
+          job.songTitle ??
           `AI ${job.prompt.slice(0, 16)}${results.length > 1 ? ` ${index + 1}` : ""}`,
         prompt: job.prompt,
         lyrics: item.lyrics ?? result.lyrics ?? job.lyrics ?? "",
@@ -625,7 +652,22 @@ export class CloudBaseMusicStore implements MusicStore {
     request: Parameters<MusicProvider["createJob"]>[0],
   ) {
     try {
-      return await this.provider.createJob(request);
+      const result = await this.provider.createJob(request);
+
+      if (
+        result.status !== "failed" &&
+        !result.providerJobId.trim() &&
+        !result.audioUrl &&
+        !result.results?.length
+      ) {
+        return {
+          providerJobId: "",
+          status: "failed" as const,
+          error: "Missing provider job id from create response",
+        };
+      }
+
+      return result;
     } catch (error) {
       return {
         providerJobId: "",

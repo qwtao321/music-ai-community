@@ -7,8 +7,12 @@ const globalForMusicStore = globalThis as unknown as {
   musicStore?: MusicStore;
 };
 
+function isCurrentMusicStore(store: MusicStore | undefined) {
+  return typeof store?.listStyleTemplates === "function";
+}
+
 export async function getMusicStore(): Promise<MusicStore> {
-  if (!globalForMusicStore.musicStore) {
+  if (!isCurrentMusicStore(globalForMusicStore.musicStore)) {
     const provider = createMusicProvider();
 
     if (shouldUseCloudBaseStore()) {

@@ -7,4 +7,5 @@ export const cloudBaseCollections = {
   favorites: "favorites",
   plays: "plays",
   providerAssets: "providerAssets",
+  musicStyleTemplates: "musicStyleTemplates",
 } as const;

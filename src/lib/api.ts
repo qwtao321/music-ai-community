@@ -5,6 +5,7 @@ import { getUserIdFromCookieHeader } from "@/lib/music/user-id";
 export const generationSchema = z.object({
   mode: z.enum(["original", "cover_audio", "cover_text_style"]),
   prompt: z.string().min(2).max(5000),
+  songTitle: z.string().trim().min(1).max(120).optional(),
   lyrics: z.string().max(4000).optional(),
   tags: z.array(z.string()).default([]),
   language: z.string().default("中文"),

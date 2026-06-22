@@ -19,8 +19,8 @@
       "SUNO_API_BASE_URL": "https://www.suno-api.io",
       "SUNO_MODEL": "suno-v5-5",
       "SUNO_FORCE_MOCK": "false",
-      "MINIMAX_API_BASE_URL": "https://api.minimax.io",
-      "MINIMAX_MODEL": "MiniMax-M3"
+      "DEEPSEEK_API_BASE_URL": "https://api.deepseek.com",
+      "DEEPSEEK_MODEL": "deepseek-v4-flash"
     },
     "ignore": [
       ".env",
