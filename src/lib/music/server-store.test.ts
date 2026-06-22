@@ -40,3 +40,27 @@ test("falls back to the demo store when CloudBase store setup fails", async () =
     30,
   );
 });
+
+test("falls back to the demo store when a CloudBase store method throws", async () => {
+  vi.stubEnv("CLOUDBASE_ENV_ID", "env-id");
+  vi.stubEnv("TENCENTCLOUD_SECRET_ID", "secret-id");
+  vi.stubEnv("TENCENTCLOUD_SECRET_KEY", "secret-key");
+
+  vi.doMock("./cloudbase-store", () => ({
+    createCloudBaseMusicStore() {
+      return {
+        listStyleTemplates() {
+          throw new Error("CloudBase query failed");
+        },
+      };
+    },
+  }));
+
+  const { getMusicStore } = await import("./server-store");
+
+  const store = await getMusicStore();
+
+  await expect(Promise.resolve(store.listStyleTemplates())).resolves.toHaveLength(
+    30,
+  );
+});
