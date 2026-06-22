@@ -48,6 +48,38 @@ export async function getAccessToken() {
   return getCloudBaseAuth().getAccessToken();
 }
 
+export function getAccessTokenValue(value: unknown) {
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+
+  const payload = value as Record<string, unknown>;
+  const token =
+    payload.accessToken ??
+    payload.access_token ??
+    payload.token;
+
+  return typeof token === "string" ? token : "";
+}
+
+async function getResponseErrorMessage(response: Response) {
+  const text = await response.text();
+
+  if (!text) {
+    return `Unable to sync CloudBase session (HTTP ${response.status})`;
+  }
+
+  try {
+    const payload = JSON.parse(text) as {
+      error?: string;
+      message?: string;
+    };
+    return payload.error ?? payload.message ?? text;
+  } catch {
+    return text;
+  }
+}
+
 export async function sendSmsVerification(phoneNumber: string) {
   const auth = getCloudBaseAuth() as ReturnType<typeof getCloudBaseAuth> & {
     getVerification: (params: {
@@ -195,6 +227,7 @@ export async function syncCloudBaseSession(loginState?: CloudBaseLoginState | nu
   }
 
   const accessToken = await getAccessToken();
+  const accessTokenValue = getAccessTokenValue(accessToken);
   const response = await fetch("/api/auth/session", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -203,12 +236,12 @@ export async function syncCloudBaseSession(loginState?: CloudBaseLoginState | nu
       displayName: identity.displayName,
       avatarUrl: identity.avatarUrl ?? "",
       phone: identity.phone,
-      accessToken: accessToken.accessToken,
+      accessToken: accessTokenValue,
     }),
   });
 
   if (!response.ok) {
-    throw new Error("Unable to sync CloudBase session");
+    throw new Error(await getResponseErrorMessage(response));
   }
 
   return (await response.json()) as {
