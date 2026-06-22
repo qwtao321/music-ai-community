@@ -16,8 +16,13 @@ export async function getMusicStore(): Promise<MusicStore> {
     const provider = createMusicProvider();
 
     if (shouldUseCloudBaseStore()) {
-      const { createCloudBaseMusicStore } = await import("./cloudbase-store");
-      globalForMusicStore.musicStore = createCloudBaseMusicStore(provider);
+      try {
+        const { createCloudBaseMusicStore } = await import("./cloudbase-store");
+        globalForMusicStore.musicStore = createCloudBaseMusicStore(provider);
+      } catch (error) {
+        console.error("CloudBase store unavailable, falling back to demo store", error);
+        globalForMusicStore.musicStore = createDemoMusicStore(provider);
+      }
     } else {
       globalForMusicStore.musicStore = createDemoMusicStore(provider);
     }
