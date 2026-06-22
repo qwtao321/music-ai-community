@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { z, ZodError } from "zod";
 import { fail, ok, parseJson } from "@/lib/api";
 import { getMusicStore } from "@/lib/music/server-store";
+import { resolveSessionToken } from "@/lib/music/session-token";
 import {
   cloudBaseSessionCookieName,
   cloudBaseUserCookieName,
@@ -12,7 +13,7 @@ const schema = z.object({
   displayName: z.string().trim().min(1).optional(),
   avatarUrl: z.string().url().optional().or(z.literal("")),
   phone: z.string().optional(),
-  accessToken: z.string().min(1),
+  accessToken: z.string().trim().optional().or(z.literal("")),
 });
 
 function getCookieOptions(maxAge = 60 * 60 * 24 * 30) {
@@ -37,6 +38,7 @@ export async function POST(request: Request) {
     const fallbackDisplayName = payload.phone
       ? `手机用户 ${payload.phone.slice(-4)}`
       : "手机号用户";
+    const sessionToken = resolveSessionToken(payload.userId, payload.accessToken);
     const profile = await store.ensureProfile(
       payload.userId,
       payload.displayName ?? fallbackDisplayName,
@@ -50,7 +52,7 @@ export async function POST(request: Request) {
     );
     cookieStore.set(
       cloudBaseSessionCookieName,
-      payload.accessToken,
+      sessionToken,
       getCookieOptions(),
     );
 
@@ -58,7 +60,7 @@ export async function POST(request: Request) {
       profile,
       changed:
         previousUserId !== payload.userId ||
-        previousAccessToken !== payload.accessToken ||
+        previousAccessToken !== sessionToken ||
         !existing,
     });
   } catch (error) {
